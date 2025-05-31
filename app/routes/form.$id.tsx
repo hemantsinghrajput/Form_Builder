@@ -23,26 +23,27 @@ export default function PublicFormPage() {
   // Load form from localStorage on client
   useEffect(() => {
     if (!formId) return;
+    
     // Only runs in the browser
-    if (typeof window === 'undefined' || !window.localStorage) {
-      setNotFound(true);
+    if (typeof window === 'undefined') {
       return;
     }
-    const json = window.localStorage.getItem(`form-${formId}`);
-    if (json) {
-      try {
+    
+    try {
+      const json = window.localStorage?.getItem(`form-${formId}`);
+      if (json) {
         const parsed = JSON.parse(json);
         // loadForm should accept { steps, currentStep }
         loadForm(parsed);
         setNotFound(false);
-      } catch {
+      } else {
         setNotFound(true);
       }
-    } else {
+    } catch (error) {
+      console.error('Error loading form:', error);
       setNotFound(true);
     }
-    // eslint-disable-next-line
-  }, [formId]);
+  }, [formId, loadForm]);
 
   if (notFound) {
     return (
@@ -63,16 +64,16 @@ export default function PublicFormPage() {
 
   // --- FORM VALIDATION LOGIC ---
   const validateStep = (isSubmission = false) => {
-    const formData = useFormStore.getState().steps[currentStep].reduce<
-      Record<string, string | boolean | undefined>
-    >((acc, field) => ({
-      ...acc,
-      [field.id]: field.value,
-    }), {});
+    // Early return if no steps or invalid currentStep
+    if (!steps || !steps[currentStep] || steps[currentStep].length === 0) {
+      return true;
+    }
+
+    const currentStepFields = steps[currentStep];
     const errors: Record<string, string> = {};
     
-    steps[currentStep].forEach((field) => {
-      const value = formData[field.id];
+    currentStepFields.forEach((field) => {
+      const value = field.value;
       
       // Skip terms and conditions validation unless it's the final submission
       const isTermsField = field.label?.toLowerCase().includes('terms') || 
@@ -102,17 +103,18 @@ export default function PublicFormPage() {
       }
     });
     
-    useFormStore.setState((state) => ({
-      steps: state.steps.map((s, i) =>
-        i === currentStep
-          ? s.map((f) => ({ ...f, error: errors[f.id] }))
-          : s,
-      ),
-    }));
-    
-    // Show alert if there are validation errors
+    // Only update state if there are actual changes needed
     if (Object.keys(errors).length > 0) {
-      const errorFields = steps[currentStep]
+      useFormStore.setState((state) => ({
+        steps: state.steps.map((s, i) =>
+          i === currentStep
+            ? s.map((f) => ({ ...f, error: errors[f.id] }))
+            : s,
+        ),
+      }));
+      
+      // Show alert if there are validation errors
+      const errorFields = currentStepFields
         .filter((field) => errors[field.id])
         .map((field) => field.label || field.id)
         .join(', ');
@@ -188,17 +190,22 @@ export default function PublicFormPage() {
             <button
               key={index}
               onClick={() => {
-                if (index <= currentStep || validateStep(false)) {
+                // Only allow navigation to previous steps or current step without validation
+                if (index <= currentStep) {
                   setCurrentStep(index);
+                } else {
+                  // For forward navigation, validate current step first
+                  if (validateStep(false)) {
+                    setCurrentStep(index);
+                  }
                 }
               }}
               className={`inline-block w-8 h-8 rounded-full text-center leading-8 text-sm font-medium ${
                 index <= currentStep
                   ? 'bg-blue-500 text-white dark:bg-blue-400'
                   : 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200'
-              } ${index <= currentStep || validateStep(false) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+              } ${index <= currentStep ? 'cursor-pointer' : 'cursor-not-allowed'}`}
               aria-label={`Go to Step ${index + 1}`}
-              disabled={index > currentStep && !validateStep(false)}
             >
               {index + 1}
             </button>
