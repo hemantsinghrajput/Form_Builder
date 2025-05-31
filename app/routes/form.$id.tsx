@@ -62,7 +62,7 @@ export default function PublicFormPage() {
   }
 
   // --- FORM VALIDATION LOGIC ---
-  const validateStep = () => {
+  const validateStep = (isSubmission = false) => {
     const formData = useFormStore.getState().steps[currentStep].reduce<
       Record<string, string | boolean | undefined>
     >((acc, field) => ({
@@ -70,9 +70,20 @@ export default function PublicFormPage() {
       [field.id]: field.value,
     }), {});
     const errors: Record<string, string> = {};
+    
     steps[currentStep].forEach((field) => {
       const value = formData[field.id];
-      if (field.required && (value === undefined || value === '' || value === false)) {
+      
+      // Skip terms and conditions validation unless it's the final submission
+      const isTermsField = field.label?.toLowerCase().includes('terms') || 
+                          field.label?.toLowerCase().includes('agree') ||
+                          field.id?.toLowerCase().includes('terms') ||
+                          field.id?.toLowerCase().includes('agree');
+      
+      if (field.required && !isTermsField && (value === undefined || value === '' || value === false)) {
+        errors[field.id] = 'This field is required';
+      } else if (field.required && isTermsField && isSubmission && (value === undefined || value === '' || value === false)) {
+        // Only validate terms field on final submission
         errors[field.id] = 'This field is required';
       } else if (typeof value === 'string' && field.pattern && value) {
         try {
@@ -90,6 +101,7 @@ export default function PublicFormPage() {
         }
       }
     });
+    
     useFormStore.setState((state) => ({
       steps: state.steps.map((s, i) =>
         i === currentStep
@@ -97,6 +109,7 @@ export default function PublicFormPage() {
           : s,
       ),
     }));
+    
     // Show alert if there are validation errors
     if (Object.keys(errors).length > 0) {
       const errorFields = steps[currentStep]
@@ -105,13 +118,18 @@ export default function PublicFormPage() {
         .join(', ');
       alert(`Please fill out the following required fields: ${errorFields}`);
     }
+    
     return Object.keys(errors).length === 0;
   };
 
   // --- SUBMIT HANDLER ---
   const handleSubmit = () => {
     if (!formId) return;
-    if (validateStep()) {
+    
+    // Check if this is the final step (submission)
+    const isSubmission = currentStep === steps.length - 1;
+    
+    if (validateStep(isSubmission)) {
       if (currentStep < steps.length - 1) {
         setCurrentStep(currentStep + 1);
       } else {
@@ -170,7 +188,7 @@ export default function PublicFormPage() {
             <button
               key={index}
               onClick={() => {
-                if (index <= currentStep || validateStep()) {
+                if (index <= currentStep || validateStep(false)) {
                   setCurrentStep(index);
                 }
               }}
@@ -178,9 +196,9 @@ export default function PublicFormPage() {
                 index <= currentStep
                   ? 'bg-blue-500 text-white dark:bg-blue-400'
                   : 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200'
-              } ${index <= currentStep || validateStep() ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+              } ${index <= currentStep || validateStep(false) ? 'cursor-pointer' : 'cursor-not-allowed'}`}
               aria-label={`Go to Step ${index + 1}`}
-              disabled={index > currentStep && !validateStep()}
+              disabled={index > currentStep && !validateStep(false)}
             >
               {index + 1}
             </button>
