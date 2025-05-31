@@ -2,6 +2,7 @@ import type { Config } from "tailwindcss";
 
 export default {
   content: ["./app/**/{**,.client,.server}/**/*.{js,jsx,ts,tsx}"],
+  darkMode: 'class', // Ensure dark mode uses class-based toggling
   theme: {
     extend: {
       fontFamily: {

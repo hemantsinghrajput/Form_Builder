@@ -1,40 +1,30 @@
-# Welcome to Remix!
+# Form_Builder
 
-- 📖 [Remix docs](https://remix.run/docs)
+A customizable, multi-step form builder application built with **Remix**, **Tailwind CSS**, and **React**.  
+It features live preview across different device sizes and supports dark/light themes for an enhanced user experience.
 
-## Development
+## Features
 
-Run the dev server:
+- Create and configure multiple steps with various field types
+- Live preview with device mode switching (desktop, tablet, mobile)
+- Dark and light mode themes with seamless toggling
+- Field-level validations including required, min/max length, and regex patterns
+- Dynamic options management for select fields
+- Intuitive UI with accessibility considerations
 
-```shellscript
+## Tech Stack
+
+- Remix (React framework)
+- Tailwind CSS for utility-first styling
+- React Context API for theme management
+- Optional TypeScript support
+
+## Getting Started
+
+### Installation
+
+```bash
+git clone https://github.com/yourusername/Form_Builder.git
+cd Form_Builder
+npm install
 npm run dev
-```
-
-## Deployment
-
-First, build your app for production:
-
-```sh
-npm run build
-```
-
-Then run the app in production mode:
-
-```sh
-npm start
-```
-
-Now you'll need to pick a host to deploy it to.
-
-### DIY
-
-If you're familiar with deploying Node applications, the built-in Remix app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-- `build/server`
-- `build/client`
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever css framework you prefer. See the [Vite docs on css](https://vitejs.dev/guide/features.html#css) for more information.
